@@ -2,9 +2,100 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카페 수정 요청</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+
+    <!-- ✅ 네비게이션 바 -->
+    <nav>
+        <div class="logo">
+            <a href="/"><h1>☕ Cafe & Wifi API</h1></a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/">홈</a></li>
+            <li><a href="/add">카페 추가</a></li>
+            <li><a href="/update" class="active">정보 수정 요청</a></li>
+        </ul>
+    </nav>
+
+    <!-- ✅ 카페 수정 요청 폼 -->
+    <section id="update-cafe-section">
+        <h2>✏️ 카페 수정 요청</h2>
+        <p>카페 정보를 수정하려면 아래 내용을 입력하세요.</p>
+
+        <!-- ✅ 카페 선택 드롭다운 -->
+        <label for="cafe-select">카페 선택:</label>
+        <select id="cafe-select" required>
+            <option value="">카페를 선택하세요</option>
+        </select>
+
+        <form id="request-update-form">
+            <input type="text" name="name" placeholder="새로운 이름">
+            <input type="text" name="location" placeholder="새로운 위치">
+            <input type="text" name="coffee_price" placeholder="새로운 커피 가격">
+            <input type="text" name="seats" placeholder="좌석 수">
+
+            <!-- ✅ 체크박스 그룹 (가로 정렬) -->
+            <div class="checkbox-group">
+                <label><input type="checkbox" name="has_wifi"> WiFi 있음</label>
+                <label><input type="checkbox" name="has_sockets"> 콘센트 있음</label>
+                <label><input type="checkbox" name="has_toilet"> 화장실 있음</label>
+                <label><input type="checkbox" name="can_take_calls"> 통화 가능</label>
+            </div>
+
+            <button type="submit">수정 요청 제출</button>
+        </form>
+    </section>
+
+    <script>
+        // ✅ 카페 목록 불러오기
+        async function loadCafes() {
+            const response = await fetch("/cafes");
+            if (!response.ok) return alert("카페 목록을 불러오지 못했습니다.");
+
+            const cafes = await response.json();
+            const cafeSelect = document.getElementById("cafe-select");
+
+            cafes.forEach(cafe => {
+                const option = document.createElement("option");
+                option.value = cafe.id;
+                option.textContent = cafe.name + " - " + cafe.location;
+                cafeSelect.appendChild(option);
+            });
+        }
+
+        document.getElementById("request-update-form").onsubmit = async function(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+
+            const cafeId = document.getElementById("cafe-select").value;
+            if (!cafeId) return alert("카페를 선택하세요!");
+
+            // 체크박스 값 처리
+            data.has_wifi = data.has_wifi ? true : false;
+            data.has_sockets = data.has_sockets ? true : false;
+            data.has_toilet = data.has_toilet ? true : false;
+            data.can_take_calls = data.can_take_calls ? true : false;
+
+            const response = await fetch(`/cafes/${cafeId}/update-request`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert("카페 수정 요청이 제출되었습니다. 검토 후 반영됩니다.");
+                window.location.href = "/"; // 홈으로 이동
+            } else {
+                alert("요청 실패: " + (await response.json()).error);
+            }
+        };
+
+        window.onload = loadCafes;
+    </script>
 
 </body>
 </html>

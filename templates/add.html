@@ -2,9 +2,85 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Title</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카페 추가</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+
+    <!-- ✅ 네비게이션 바 -->
+    <nav>
+        <div class="logo">
+            <a href="/"><h1>☕ Cafe & Wifi API</h1></a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/">홈</a></li>
+            <li><a href="/add" class="active">카페 추가</a></li>
+            <li><a href="/update">정보 수정 요청</a></li>
+        </ul>
+    </nav>
+
+    <!-- ✅ 카페 추가 폼 -->
+    <section id="add-cafe-section">
+        <h2>➕ 새 카페 등록</h2>
+        <p>카페 정보를 입력한 후 등록하세요.</p>
+
+        <form id="add-cafe-form">
+            <label for="name">카페 이름</label>
+            <input type="text" id="name" name="name" placeholder="예: 스타벅스 강남점" required>
+
+            <label for="map_url">지도 URL</label>
+            <input type="text" id="map_url" name="map_url" placeholder="지도 링크를 입력하세요" required>
+
+            <label for="img_url">이미지 URL</label>
+            <input type="text" id="img_url" name="img_url" placeholder="카페 이미지 링크" required>
+
+            <label for="location">위치</label>
+            <input type="text" id="location" name="location" placeholder="예: 서울 강남구" required>
+
+            <label for="coffee_price">커피 가격</label>
+            <input type="text" id="coffee_price" name="coffee_price" placeholder="예: 4,500원" required>
+
+            <label for="seats">좌석 수</label>
+            <input type="number" id="seats" name="seats" placeholder="좌석 개수를 입력하세요" required>
+
+            <div class="checkbox-group">
+                <label><input type="checkbox" name="has_wifi"> 와이파이</label>
+                <label><input type="checkbox" name="has_sockets"> 콘센트</label>
+                <label><input type="checkbox" name="has_toilet"> 화장실</label>
+                <label><input type="checkbox" name="can_take_calls"> 통화</label>
+            </div>
+
+            <button type="submit">카페 추가</button>
+        </form>
+    </section>
+
+    <script>
+        document.getElementById("add-cafe-form").onsubmit = async function(event) {
+            event.preventDefault();
+            const formData = new FormData(event.target);
+            const data = Object.fromEntries(formData.entries());
+
+            // ✅ 체크박스 값이 포함되도록 Boolean 값 변환
+            data.has_wifi = formData.get("has_wifi") ? true : false;
+            data.has_sockets = formData.get("has_sockets") ? true : false;
+            data.has_toilet = formData.get("has_toilet") ? true : false;
+            data.can_take_calls = formData.get("can_take_calls") ? true : false;
+
+            const response = await fetch("/cafes", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                alert("카페 추가 완료!");
+                window.location.href = "/"; // 홈으로 이동
+            } else {
+                alert("추가 실패: " + (await response.json()).error);
+            }
+        };
+    </script>
 
 </body>
 </html>

@@ -2,13 +2,61 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Cafe&Wifi API</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cafe & Wifi API</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-    <h1>Welcome to the Cafe & Wifi API</h1>
-    <p>
-        View the full API documentation here:
-        <a href="https://documenter.getpostman.com/view/17977980/2sAYQggTZh#e50d0b00-d373-490c-8fa4-b02431e7a6a5" target="_blank">Cafe & Wifi API Documentation</a>
-    </p>
+
+    <!-- ✅ 네비게이션 바 -->
+    <nav>
+        <div class="logo">
+            <a href="/"><h1>☕ Cafe & Wifi API</h1></a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/">🏠 홈</a></li>
+            <li><a href="/add">➕ 카페 추가</a></li>
+            <li><a href="/update">✏️ 정보 수정 요청</a></li>
+        </ul>
+    </nav>
+
+    <!-- ✅ 검색 섹션 -->
+    <section id="search-section">
+        <h2>🔍 카페 검색</h2>
+        <form id="search-form">
+            <input type="text" id="search-input" placeholder="지역을 입력하세요">
+            <button type="submit">검색</button>
+        </form>
+        <div id="search-results"></div>
+    </section>
+
+    <!-- ✅ 랜덤 추천 버튼 -->
+    <section id="buttons">
+        <button id="random-cafe-btn">🎲 랜덤 카페 추천</button>
+    </section>
+
+    <!-- ✅ 카페 목록 (카드 UI) -->
+    <section id="cafe-section">
+        <h2>☕ 모든 카페 목록</h2>
+        <div id="cafe-list" class="cafe-grid"></div>
+    </section>
+
+    <!-- ✅ API 설명 -->
+    <section id="api-info">
+        <h2>📌 API 사용법</h2>
+        <p>이 API는 전 세계 카페 목록을 관리합니다.</p>
+        <ul>
+            <li><b>[GET] /cafes</b> - 모든 카페 목록 조회</li>
+            <li><b>[GET] /cafes/random</b> - 랜덤 카페 추천</li>
+            <li><b>[GET] /cafes/location/{location}</b> - 특정 지역 카페 검색</li>
+            <li><b>[POST] /cafes</b> - 새로운 카페 추가</li>
+            <li><b>[POST] /cafes/{cafe_id}/update-request</b> - 카페 정보 수정 요청</li>
+            <li><b>[DELETE] /cafes/{cafe_id}</b> - 카페 삭제 (관리자 전용)</li>
+        </ul>
+        <p>자세한 내용은 <a href="https://documenter.getpostman.com/view/17977980/2sAYQggTZh" target="_blank">API 문서</a>를 확인하세요.</p>
+    </section>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
 </body>
 </html>

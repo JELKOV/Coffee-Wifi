@@ -1,0 +1,379 @@
+/* ✅ 전체 페이지 기본 스타일 */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+}
+
+/* 기본 링크 스타일 */
+a {
+    color: #3498db; /* 기본 링크 색상 */
+    text-decoration: none; /* 밑줄 제거 (선택사항) */
+}
+
+/* 방문 후에도 색상 유지 */
+a:visited {
+    color: #3498db; /* 방문한 후에도 동일한 색 */
+}
+
+/* 클릭 시 색상 변화 없음 */
+a:active, a:focus {
+    color: #3498db;
+    outline: none; /* 클릭 시 생기는 점선 테두리 제거 */
+}
+
+
+/* ✅ 네비게이션 바 */
+nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #2c3e50;
+    color: white;
+    padding: 15px 20px;
+}
+
+nav .logo h1 {
+    font-size: 1.5rem;
+    margin: 0;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    padding: 0;
+    margin: 0;
+}
+
+.nav-links li {
+    margin: 0 15px;
+}
+
+.nav-links li a {
+    color: white;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.nav-links li a:hover {
+    text-decoration: underline;
+}
+
+/* ✅ 검색 섹션 */
+#search-section {
+    text-align: center;
+    margin: 30px 0;
+}
+
+#search-form {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+#search-input {
+    width: 350px;
+    padding: 12px;
+    font-size: 1rem;
+    border: 2px solid #ccc;
+    border-radius: 5px;
+}
+
+#search-form button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    cursor: pointer;
+    font-size: 1rem;
+    border-radius: 5px;
+}
+
+#search-form button:hover {
+    background: #2980b9;
+}
+
+/* ✅ 카페 목록 (카드 스타일) */
+.cafe-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+    padding: 20px;
+}
+
+.cafe-card {
+    background: white;
+    border-radius: 8px;
+    padding: 15px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease-in-out;
+}
+
+.cafe-card:hover {
+    transform: scale(1.05);
+}
+
+.cafe-card img {
+    width: 100%;
+    border-radius: 8px;
+    max-height: 180px;
+    object-fit: cover;
+}
+
+.cafe-card h3 {
+    margin: 10px 0;
+    font-size: 1.2rem;
+    color: #2c3e50;
+}
+
+.cafe-card p {
+    font-size: 0.9rem;
+    color: #555;
+}
+
+.cafe-card a {
+    display: inline-block;
+    text-decoration: none;
+    color: #3498db;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.cafe-card a:hover {
+    text-decoration: underline;
+}
+
+/* ✅ 랜덤 카페 추천 버튼 */
+#buttons {
+    text-align: center;
+    margin: 20px 0;
+}
+
+#random-cafe-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    padding: 12px 20px;
+    cursor: pointer;
+    font-size: 1rem;
+    border-radius: 5px;
+    transition: background 0.3s ease;
+}
+
+#random-cafe-btn:hover {
+    background: #c0392b;
+}
+
+/* ✅ API 정보 */
+#api-info {
+    background: #ecf0f1;
+    padding: 20px;
+    text-align: center;
+    margin-top: 30px;
+}
+
+#api-info h2 {
+    color: #2c3e50;
+}
+
+#api-info ul {
+    list-style: none;
+    padding: 0;
+}
+
+#api-info ul li {
+    margin: 5px 0;
+    font-size: 1rem;
+    color: #34495e;
+}
+
+/* ✅ 카페 추가 페이지 스타일 */
+#add-cafe-section {
+    text-align: center;
+    margin: 40px auto;
+    padding: 20px;
+    max-width: 500px;
+    background: white;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+#add-cafe-section h2 {
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+#add-cafe-section p {
+    font-size: 1rem;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+/* ✅ 카페 추가 폼 스타일 */
+#add-cafe-section {
+    width: 100%;
+    max-width: 600px;
+    margin: 50px auto;
+    background: white;
+    padding: 50px;
+    border-radius: 10px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+#add-cafe-section h2 {
+    text-align: center;
+    color: #2c3e50;
+}
+
+#add-cafe-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+#add-cafe-form label {
+    font-weight: bold;
+    color: #34495e;
+}
+
+#add-cafe-form input {
+    width: 100%;
+    padding: 5px;
+    font-size: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+#add-cafe-form .checkbox-group {
+    display: flex;
+    justify-content: space-between;  /* 한 줄에 배치 */
+    gap: 20px;  /* 간격 조정 */
+    margin-top: 10px;
+}
+
+#add-cafe-form .checkbox-group label {
+    display: flex;
+    align-items: center; /* 체크박스와 글자 정렬 */
+    font-size: 1rem;
+    gap: 5px;
+    white-space: nowrap; /* 텍스트 줄바꿈 방지 */
+}
+
+#add-cafe-form button {
+    background: #3498db;
+    color: white;
+    border: none;
+    padding: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+#add-cafe-form button:hover {
+    background: #2980b9;
+}
+
+/* ✅ 카페 수정 요청 섹션 */
+#update-cafe-section {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 50px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+#update-cafe-section h2 {
+    color: #2c3e50;
+}
+
+/* ✅ 드롭다운 스타일 */
+#cafe-select {
+    width: 50%;
+    padding: 10px;
+    font-size: 1rem;
+    margin-top: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* ✅ 폼 입력 필드 */
+#request-update-form input {
+    width: 100%;
+    padding: 10px;
+    font-size: 1rem;
+    margin: 10px 0;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* ✅ 체크박스 그룹 (가로 정렬) */
+#request-update-form .checkbox-group {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 15px 0;
+}
+
+#request-update-form .checkbox-group label {
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    gap: 5px;
+}
+
+/* ✅ 제출 버튼 */
+#request-update-form button {
+    background: #27ae60;
+    color: white;
+    border: none;
+    padding: 12px 18px;
+    cursor: pointer;
+    font-size: 1rem;
+    border-radius: 5px;
+    width: 100%;
+}
+
+#request-update-form button:hover {
+    background: #219150;
+}
+
+
+/* ✅ 반응형 디자인 (모바일 지원) */
+@media (max-width: 768px) {
+    nav {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .nav-links {
+        flex-direction: column;
+    }
+
+    .nav-links li {
+        margin-bottom: 10px;
+    }
+
+    #search-form {
+        flex-direction: column;
+        align-items: center;
+    }
+
+    #search-input {
+        width: 90%;
+    }
+
+    .cafe-grid {
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    #add-cafe-section {
+        width: 90%;
+    }
+}
