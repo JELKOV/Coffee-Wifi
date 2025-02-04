@@ -170,7 +170,7 @@ def login_page():
     return render_template("login.html")
 
 # 관리자 삭제를 위한 카페 확인페이지 이동
-@app.route("/admin/cafes")
+@app.route("/admin/cafes/delete")
 def admin_cafes_page():
     if not is_admin():
         return redirect(url_for("login_page"))  # 관리자 권한 없으면 로그인 페이지로 리디렉트
@@ -197,6 +197,20 @@ def get_random_cafe():
 
     random_cafe = random.choice(cafes)
     return jsonify(cafe_to_dict(random_cafe)), 200
+
+# [GET] 카페 상세 페이지
+@app.route('/cafe/<int:cafe_id>')
+def cafe_detail_page(cafe_id):
+    return render_template('cafe_detail.html', cafe_id=cafe_id)
+
+
+# [GET] 개별 카페 정보 조회 API (JSON 데이터 반환)
+@app.route("/cafes/<int:cafe_id>", methods=["GET"])
+def get_cafe_by_id(cafe_id):
+    cafe = Cafe.query.get(cafe_id)
+    if not cafe:
+        return jsonify({"error": "Cafe not found"}), 404
+    return jsonify(cafe_to_dict(cafe)), 200
 
 # [GET] 위치 기반 카페 검색
 @app.route("/cafes/location/<string:location>", methods=["GET"])

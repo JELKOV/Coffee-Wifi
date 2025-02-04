@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>카페 상세 정보</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- ✅ 네비게이션 바 -->
+    <nav>
+        <div class="logo">
+            <a href="/"><h1>☕ Cafe & Wifi API</h1></a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/">🏠 홈</a></li>
+            <li><a href="/add">➕ 카페 추가</a></li>
+            <li><a href="/update">✏️ 정보 수정 요청</a></li>
+            <li><a href="/admin">🛠️ 관리자 페이지</a></li>
+        </ul>
+    </nav>
+
+    <!-- ✅ 카페 상세 정보 카드 -->
+    <div class="cafe-detail-container">
+        <h2 class="cafe-detail-title" id="cafe-name">카페 정보</h2>
+        <img class="cafe-detail-img" id="cafe-img" src="" alt="카페 이미지">
+        <div class="cafe-detail-info">
+            <p><strong>📍 위치:</strong> <span id="cafe-location"></span></p>
+            <p><strong>☕ 커피 가격:</strong> <span id="cafe-price"></span></p>
+            <p><strong>💺 좌석 수:</strong> <span id="cafe-seats"></span></p>
+            <p><strong>📶 WiFi:</strong> <span id="cafe-wifi"></span></p>
+            <p><strong>🔌 콘센트:</strong> <span id="cafe-sockets"></span></p>
+        </div>
+    </div>
+
+    <script>
+        async function loadCafe() {
+            const cafeId = "{{ cafe_id }}"; // Flask에서 전달된 cafe_id 값
+            const response = await fetch(`/cafes/${cafeId}`);
+
+            if (!response.ok) {
+                document.body.innerHTML = `<h2 style="color: red;">❌ 카페 정보를 불러오지 못했습니다.</h2>`;
+                return;
+            }
+
+            const cafe = await response.json();
+
+            document.getElementById("cafe-name").textContent = cafe.name;
+            document.getElementById("cafe-img").src = cafe.img_url;
+            document.getElementById("cafe-location").textContent = cafe.location;
+            document.getElementById("cafe-price").textContent = cafe.coffee_price || "정보 없음";
+            document.getElementById("cafe-seats").textContent = cafe.seats;
+            document.getElementById("cafe-wifi").textContent = cafe.amenities.has_wifi ? "가능" : "없음";
+            document.getElementById("cafe-sockets").textContent = cafe.amenities.has_sockets ? "가능" : "없음";
+        }
+
+        window.onload = loadCafe;
+    </script>
+
+</body>
+</html>

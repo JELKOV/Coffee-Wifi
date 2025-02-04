@@ -1,9 +1,25 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>관리자 로그인</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
+    <!-- ✅ 네비게이션 바 -->
+    <nav>
+        <div class="logo">
+            <a href="/"><h1>☕ Cafe & Wifi API</h1></a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/">🏠 홈</a></li>
+            <li><a href="/add">➕ 카페 추가</a></li>
+            <li><a href="/update">✏️ 정보 수정 요청</a></li>
+            <li><a href="/login">🛠️ 관리자 로그인</a></li>
+        </ul>
+    </nav>
+
     <h2>관리자 로그인</h2>
     <form method="POST">
         <input type="password" name="token" placeholder="관리자 토큰 입력" required>
