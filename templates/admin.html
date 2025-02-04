@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 - 카페 수정 요청</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- ✅ 네비게이션 바 -->
+    <nav>
+        <div class="logo">
+            <a href="/"><h1>☕ Cafe & Wifi API</h1></a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/">홈</a></li>
+            <li><a href="/add">카페 추가</a></li>
+            <li><a href="/update">정보 수정 요청</a></li>
+            <li><a href="/admin/cafes">카페 관리</a></li>
+        </ul>
+    </nav>
+
+    <!-- ✅ 관리자 페이지 제목 -->
+    <h2 class="admin-title">관리자 페이지 - 카페 수정 요청 목록</h2>
+
+    <!-- ✅ 관리자 테이블 -->
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>카페 ID</th>
+                    <th>요청 내용</th>
+                    <th>상태</th>
+                    <th>승인</th>
+                    <th>거부</th>
+                    <th>삭제</th>
+                </tr>
+            </thead>
+            <tbody id="requests-table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function loadUpdateRequests() {
+            const response = await fetch("/admin/update-requests", {
+                method: "GET",
+                credentials: "include"
+            });
+
+            if (response.status === 403) {
+                alert("관리자 권한이 없습니다.");
+                window.location.href = "/login";  // 로그인 페이지로 이동
+                return;
+            }
+
+            const requests = await response.json();
+            const tbody = document.getElementById("requests-table-body");
+            tbody.innerHTML = ""; // 기존 데이터 초기화
+
+            // ✅ 상태가 "pending"인 요청만 표시
+            const pendingRequests = requests.filter(req => req.status === "pending");
+
+            pendingRequests.forEach(req => {
+                const updatedFields = [];
+
+                if (req.proposed_name && req.original_name !== req.proposed_name) {
+                    updatedFields.push(`📝 <b>이름 변경:</b> ${req.original_name} → <b>${req.proposed_name}</b>`);
+                }
+                if (req.proposed_location && req.original_location !== req.proposed_location) {
+                    updatedFields.push(`📍 <b>위치 변경:</b> ${req.original_location} → <b>${req.proposed_location}</b>`);
+                }
+                if (req.proposed_coffee_price && req.original_coffee_price !== req.proposed_coffee_price) {
+                    updatedFields.push(`☕ <b>커피 가격 변경:</b> ${req.original_coffee_price} → <b>${req.proposed_coffee_price}</b>`);
+                }
+                if (req.proposed_seats && req.original_seats !== req.proposed_seats) {
+                    updatedFields.push(`💺 <b>좌석 수 변경:</b> ${req.original_seats} → <b>${req.proposed_seats}</b>`);
+                }
+                if (req.proposed_map_url && req.original_map_url !== req.proposed_map_url) {
+                    updatedFields.push(`🗺 <b>지도 URL 변경됨</b>`);
+                }
+                if (req.proposed_img_url && req.original_img_url !== req.proposed_img_url) {
+                    updatedFields.push(`🖼 <b>이미지 변경됨</b>`);
+                }
+                if (req.proposed_has_toilet !== null && req.original_has_toilet !== req.proposed_has_toilet) {
+                    updatedFields.push(`🚻 <b>화장실 여부:</b> ${req.original_has_toilet ? "있음" : "없음"} → <b>${req.proposed_has_toilet ? "있음" : "없음"}</b>`);
+                }
+                if (req.proposed_has_wifi !== null && req.original_has_wifi !== req.proposed_has_wifi) {
+                    updatedFields.push(`📶 <b>WiFi 여부:</b> ${req.original_has_wifi ? "있음" : "없음"} → <b>${req.proposed_has_wifi ? "있음" : "없음"}</b>`);
+                }
+                if (req.proposed_has_sockets !== null && req.original_has_sockets !== req.proposed_has_sockets) {
+                    updatedFields.push(`🔌 <b>콘센트 여부:</b> ${req.original_has_sockets ? "있음" : "없음"} → <b>${req.proposed_has_sockets ? "있음" : "없음"}</b>`);
+                }
+                if (req.proposed_can_take_calls !== null && req.original_can_take_calls !== req.proposed_can_take_calls) {
+                    updatedFields.push(`📞 <b>통화 가능 여부:</b> ${req.original_can_take_calls ? "가능" : "불가능"} → <b>${req.proposed_can_take_calls ? "가능" : "불가능"}</b>`);
+                }
+
+                // 변경 사항이 없으면 "변경 사항 없음" 표시
+                const changesDisplay = updatedFields.length > 0 ? updatedFields.join("<br>") : "변경 사항 없음";
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${req.cafe_id}</td>
+                    <td>${changesDisplay}</td>
+                    <td>${req.status}</td>
+                    <td><button onclick="approveRequest(${req.request_id})">✅ 승인</button></td>
+                    <td><button onclick="rejectRequest(${req.request_id})">❌ 거부</button></td>
+                    <td><button onclick="deleteRequest(${req.request_id})">🗑 삭제</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+
+        async function approveRequest(requestId) {
+            const response = await fetch(`/admin/update-requests/${requestId}`, {
+                method: "PATCH",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "approve" })
+            });
+
+            if (response.ok) {
+                alert("✅ 요청이 승인되었습니다.");
+                loadUpdateRequests();  // 새로고침 없이 테이블만 업데이트
+            } else {
+                alert("요청 승인에 실패했습니다.");
+            }
+        }
+
+        async function rejectRequest(requestId) {
+            const response = await fetch(`/admin/update-requests/${requestId}`, {
+                method: "PATCH",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "reject" })
+            });
+
+            if (response.ok) {
+                alert("❌ 요청이 거부되었습니다.");
+                loadUpdateRequests();  // 새로고침 없이 테이블만 업데이트
+            } else {
+                alert("요청 거부에 실패했습니다.");
+            }
+        }
+
+
+        async function deleteRequest(requestId) {
+
+            const confirmDelete = confirm("정말로 이 요청을 삭제하시겠습니까?");
+            if (!confirmDelete) return;
+
+            await fetch(`/admin/update-requests/${requestId}`, {
+                method: "DELETE",
+                credentials: "include",
+            });
+
+            location.reload();
+        }
+
+        window.onload = loadUpdateRequests;
+    </script>
+</body>
+</html>

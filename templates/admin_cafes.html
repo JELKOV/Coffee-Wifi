@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>관리자 - 카페 관리</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+    <!-- ✅ 네비게이션 바 -->
+    <nav>
+        <div class="logo">
+            <a href="/"><h1>☕ Cafe & Wifi API</h1></a>
+        </div>
+        <ul class="nav-links">
+            <li><a href="/">홈</a></li>
+            <li><a href="/add">카페 추가</a></li>
+            <li><a href="/update">정보 수정 요청</a></li>
+            <li><a href="/admin">정보 요청 승락/거부</a></li>
+        </ul>
+    </nav>
+
+    <!-- ✅ 관리자 페이지 제목 -->
+    <h2 class="admin-title">관리자 페이지 - 카페 목록</h2>
+
+    <!-- ✅ 관리자 테이블 -->
+    <div class="admin-table-container">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>카페 ID</th>
+                    <th>카페 이름</th>
+                    <th>위치</th>
+                    <th>커피 가격</th>
+                    <th>삭제</th>
+                </tr>
+            </thead>
+            <tbody id="cafes-table-body"></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function loadCafeList() {
+
+            const response = await fetch("/admin/cafes", {
+                method: "GET",
+                credentials: "include"
+            });
+
+            if (response.status === 403) {
+                alert("관리자 권한이 없습니다.");
+                window.location.href = "/login";
+                return;
+            }
+
+            const cafes = await response.json();
+            const tbody = document.getElementById("cafes-table-body");
+            tbody.innerHTML = ""; // 기존 데이터 초기화
+
+            cafes.forEach(cafe => {
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>${cafe.id}</td>
+                    <td>${cafe.name}</td>
+                    <td>${cafe.location}</td>
+                    <td>${cafe.coffee_price || "정보 없음"}</td>
+                    <td><button onclick="deleteCafe(${cafe.id})">🗑 삭제</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        async function deleteCafe(cafeId) {
+
+            const confirmDelete = confirm("정말로 이 카페를 삭제하시겠습니까? 관련된 수정 요청도 함께 삭제됩니다.");
+            if (!confirmDelete) return;
+
+            const response = await fetch(`/cafes/${cafeId}`, {
+                method: "DELETE",
+                credentials: "include"
+            });
+
+            if (response.status === 200) {
+                alert("카페가 삭제되었습니다.");
+                location.reload();
+            } else {
+                const errorData = await response.json();
+                alert("삭제 실패: " + errorData.error);
+            }
+        }
+
+        window.onload = loadCafeList;
+    </script>
+</body>
+</html>
