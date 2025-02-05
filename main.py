@@ -2,12 +2,14 @@ import random
 import os
 from dotenv import load_dotenv
 
-from flask import Flask, jsonify, request, render_template, abort, redirect, url_for
+from flask import Flask, jsonify, request, render_template, abort, redirect, url_for, Response
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy import Integer, String, Boolean
 from datetime import datetime
 from flask_migrate import Migrate
+from flasgger import Swagger
+from flasgger.utils import swag_from
 
 # ─────────────────────────────────────────────
 # 📌 1. 환경 변수 설정 및 초기화
@@ -21,6 +23,12 @@ ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
 if not ADMIN_TOKEN:
     print("⚠️ WARNING: 관리자 토큰(ADMIN_TOKEN)이 설정되지 않았습니다! 기본값이 사용됩니다.")
     ADMIN_TOKEN = "default-secret-token"  # 기본값 설정 (배포 시 제거 필요!)
+
+# DOCS 비번
+ADMIN_DOCS_PASSWORD = os.getenv("ADMIN_DOCS_PASSWORD")
+if not ADMIN_DOCS_PASSWORD:
+    print("⚠️ WARNING: SWAGGER 관리자 비번이 설정되지 않았습니다! 기본값이 사용됩니다.")
+    ADMIN_DOCS_PASSWORD = "password"
 
 # ─────────────────────────────────────────────
 # 📌 2. Flask 애플리케이션 및 데이터베이스 설정
@@ -43,6 +51,51 @@ db.init_app(app)
 
 # Flask-Migrate 설정 추가
 migrate = Migrate(app, db)
+
+# API SWAGGER 초기화
+app.config["SWAGGER"] = {
+    "title": "Cafe & Wifi API",
+    "uiversion": 3
+}
+
+swagger_template = {
+    "definitions": {
+        "Cafe": {
+            "type": "object",
+            "properties": {
+                "id": {"type": "integer", "example": 1},
+                "name": {"type": "string", "example": "카페 A"},
+                "map_url": {"type": "string", "example": "https://maps.example.com/a"},
+                "img_url": {"type": "string", "example": "https://images.example.com/a.jpg"},
+                "location": {"type": "string", "example": "서울 강남구"},
+                "seats": {"type": "string", "example": "50석"},
+                "amenities": {
+                    "type": "object",
+                    "properties": {
+                        "has_toilet": {"type": "boolean", "example": True},
+                        "has_wifi": {"type": "boolean", "example": True},
+                        "has_sockets": {"type": "boolean", "example": False},
+                        "can_take_calls": {"type": "boolean", "example": True}
+                    }
+                },
+                "coffee_price": {"type": "string", "example": "₩4,500"}
+            }
+        },
+        "UpdateRequest": {
+            "type": "object",
+            "properties": {
+                "request_id": {"type": "integer", "example": 5},
+                "cafe_id": {"type": "integer", "example": 1},
+                "proposed_name": {"type": "string", "example": "새로운 카페 이름"},
+                "proposed_location": {"type": "string", "example": "서울 종로구"},
+                "proposed_coffee_price": {"type": "string", "example": "₩5,000"},
+                "status": {"type": "string", "example": "pending"}
+            }
+        }
+    }
+}
+
+swagger = Swagger(app, template=swagger_template)
 
 # ─────────────────────────────────────────────
 # 📌 3. 데이터 모델 정의 (Cafe, UpdateRequest)
@@ -92,6 +145,21 @@ with app.app_context():
 # 📌 4. 유틸리티 함수 (카페 데이터 변환, 관리자 확인)
 # ─────────────────────────────────────────────
 
+# # 관리자 SWAGGER 문서 보호 (선택사항)
+# @app.before_request
+# def protect_admin_docs():
+#     """Swagger에서 관리자 API 문서 보호"""
+#     if request.path.startswith("/apidocs"):  # "/apidocs" 경로 보호
+#         auth = request.authorization
+#         print("Request Path:", request.path)
+#         print("Auth:", auth)
+#
+#         if not auth or auth.password != ADMIN_DOCS_PASSWORD:
+#             return Response(
+#                 "관리자 인증이 필요합니다.\n",
+#                 401,
+#                 {"WWW-Authenticate": 'Basic realm="Login Required"'}
+#             )
 
 def cafe_to_dict(cafe):
     return {
@@ -176,20 +244,81 @@ def admin_cafes_page():
         return redirect(url_for("login_page"))  # 관리자 권한 없으면 로그인 페이지로 리디렉트
     return render_template("admin_cafes.html")
 
+# [GET] 카페 상세 페이지
+@app.route('/cafe/<int:cafe_id>')
+def cafe_detail_page(cafe_id):
+    return render_template('cafe_detail.html', cafe_id=cafe_id)
+
 # ─────────────────────────────────────────────
 # 📌 6. 카페 API (조회, 추가, 검색, 삭제)
 # ─────────────────────────────────────────────
 
-# [GET] 모든 카페 조회
+# [GET] 모든 카페 조회 API
 @app.route("/cafes", methods=["GET"])
+@swag_from({
+    "tags": ["Cafes"],
+    "summary": "모든 카페 조회",
+    "description": "데이터베이스에서 모든 카페 정보를 가져옵니다.",
+    "responses": {
+        200: {
+            "description": "카페 리스트 반환",
+            "schema": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/Cafe"
+                }
+            }
+        },
+        404: {
+            "description": "카페가 없음",
+            "examples": {
+                "application/json": {"error": "No cafes found"}
+            }
+        }
+    }
+})
 def get_all_cafes():
     cafes = Cafe.query.all()
     if cafes:
         return jsonify([cafe_to_dict(cafe) for cafe in cafes]), 200
     return jsonify({"error": "No cafes found"}), 404
 
-# [GET] 랜덤 카페 반환
+# [GET] 랜덤 카페 조회 API
 @app.route("/cafes/random", methods=["GET"])
+@swag_from({
+    "tags": ["Cafes"],
+    "summary": "랜덤 카페 조회",
+    "description": "데이터베이스에서 무작위로 하나의 카페 정보를 반환합니다.",
+    "responses": {
+        200: {
+            "description": "랜덤 카페 정보 반환",
+            "schema": {"$ref": "#/definitions/Cafe"},
+            "examples": {
+                "application/json": {
+                    "id": 1,
+                    "name": "랜덤 카페",
+                    "map_url": "https://maps.example.com/random",
+                    "img_url": "https://images.example.com/random.jpg",
+                    "location": "서울 강남구",
+                    "seats": "40석",
+                    "amenities": {
+                        "has_toilet": True,
+                        "has_wifi": True,
+                        "has_sockets": False,
+                        "can_take_calls": True
+                    },
+                    "coffee_price": "₩4,500"
+                }
+            }
+        },
+        404: {
+            "description": "카페 없음",
+            "examples": {
+                "application/json": {"error": "No cafes found"}
+            }
+        }
+    }
+})
 def get_random_cafe():
     cafes = Cafe.query.all()
     if not cafes:  # 빈 리스트일 경우 바로 404 반환
@@ -198,30 +327,163 @@ def get_random_cafe():
     random_cafe = random.choice(cafes)
     return jsonify(cafe_to_dict(random_cafe)), 200
 
-# [GET] 카페 상세 페이지
-@app.route('/cafe/<int:cafe_id>')
-def cafe_detail_page(cafe_id):
-    return render_template('cafe_detail.html', cafe_id=cafe_id)
 
-
-# [GET] 개별 카페 정보 조회 API (JSON 데이터 반환)
+# [GET] 개별 카페 정보 조회 API
 @app.route("/cafes/<int:cafe_id>", methods=["GET"])
+@swag_from({
+    "tags": ["Cafes"],
+    "summary": "카페 상세 조회",
+    "description": "특정 카페의 상세 정보를 조회합니다.",
+    "parameters": [
+        {
+            "name": "cafe_id",
+            "in": "path",
+            "type": "integer",
+            "required": True,
+            "description": "조회할 카페의 ID"
+        }
+    ],
+    "responses": {
+        200: {
+            "description": "카페 정보 반환",
+            "schema": {"$ref": "#/definitions/Cafe"}
+        },
+        404: {
+            "description": "카페를 찾을 수 없음",
+            "examples": {
+                "application/json": {"error": "Cafe not found"}
+            }
+        }
+    }
+})
 def get_cafe_by_id(cafe_id):
     cafe = Cafe.query.get(cafe_id)
     if not cafe:
         return jsonify({"error": "Cafe not found"}), 404
     return jsonify(cafe_to_dict(cafe)), 200
 
-# [GET] 위치 기반 카페 검색
+# [GET] 위치 기반 카페 검색 API
 @app.route("/cafes/location/<string:location>", methods=["GET"])
+@swag_from({
+    "tags": ["Cafes"],
+    "summary": "위치 기반 카페 검색",
+    "description": "입력한 위치(지역명)를 포함하는 모든 카페 목록을 반환합니다.",
+    "parameters": [
+        {
+            "name": "location",
+            "in": "path",
+            "type": "string",
+            "required": True,
+            "description": "검색할 위치(지역명)"
+        }
+    ],
+    "responses": {
+        200: {
+            "description": "위치 기반 카페 리스트 반환",
+            "schema": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/Cafe"
+                }
+            },
+            "examples": {
+                "application/json": [
+                    {
+                        "id": 2,
+                        "name": "강남 카페",
+                        "map_url": "https://maps.example.com/gangnam",
+                        "img_url": "https://images.example.com/gangnam.jpg",
+                        "location": "서울 강남구",
+                        "seats": "50석",
+                        "amenities": {
+                            "has_toilet": True,
+                            "has_wifi": True,
+                            "has_sockets": True,
+                            "can_take_calls": False
+                        },
+                        "coffee_price": "₩5,000"
+                    },
+                    {
+                        "id": 3,
+                        "name": "역삼 카페",
+                        "map_url": "https://maps.example.com/yeoksam",
+                        "img_url": "https://images.example.com/yeoksam.jpg",
+                        "location": "서울 강남구 역삼동",
+                        "seats": "30석",
+                        "amenities": {
+                            "has_toilet": False,
+                            "has_wifi": True,
+                            "has_sockets": True,
+                            "can_take_calls": True
+                        },
+                        "coffee_price": "₩4,800"
+                    }
+                ]
+            }
+        },
+        404: {
+            "description": "검색된 카페 없음",
+            "examples": {
+                "application/json": {"error": "No cafes found at location '강북구'"}
+            }
+        }
+    }
+})
 def search_cafes_by_location(location):
     cafes = Cafe.query.filter(Cafe.location.ilike(f"%{location}%")).all()
     if cafes:
         return jsonify([cafe_to_dict(cafe) for cafe in cafes]), 200
     return jsonify({"error": f"No cafes found at location '{location}'"}), 404
 
-# [POST] 새로운 카페 추가 (JSON 데이터 받아 처리)
+# [POST] 새로운 카페 추가 API
 @app.route("/cafes", methods=["POST"])
+@swag_from({
+    "tags": ["Cafes"],
+    "summary": "새로운 카페 추가",
+    "description": "새로운 카페 정보를 추가합니다.",
+    "parameters": [
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "example": "새로운 카페"},
+                    "map_url": {"type": "string", "example": "https://maps.example.com/newcafe"},
+                    "img_url": {"type": "string", "example": "https://images.example.com/newcafe.jpg"},
+                    "location": {"type": "string", "example": "서울 마포구"},
+                    "seats": {"type": "string", "example": "30석"},
+                    "has_toilet": {"type": "boolean", "example": True},
+                    "has_wifi": {"type": "boolean", "example": True},
+                    "has_sockets": {"type": "boolean", "example": False},
+                    "can_take_calls": {"type": "boolean", "example": True},
+                    "coffee_price": {"type": "string", "example": "₩4,500"}
+                }
+            }
+        }
+    ],
+    "responses": {
+        201: {
+            "description": "카페 추가 성공",
+            "examples": {
+                "application/json": {"success": "Successfully added new cafe"}
+            }
+        },
+        400: {
+            "description": "카페 중복 오류",
+            "examples": {
+                "application/json": {"error": "A cafe with this name already exists at this location"}
+            }
+        },
+        500: {
+            "description": "서버 오류",
+            "examples": {
+                "application/json": {"error": "Internal Server Error"}
+            }
+        }
+    }
+})
 def add_cafe():
     try:
         data = request.get_json()  # JSON 데이터 받기
@@ -249,8 +511,56 @@ def add_cafe():
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
-# [PATCH] 카페 업데이트
+# [PATCH] 카페 업데이트 API
 @app.route("/cafes/<int:cafe_id>/update-request", methods=["POST"])
+@swag_from({
+    "tags": ["Cafes"],
+    "summary": "카페 정보 수정 요청",
+    "description": "사용자가 카페 정보 수정 요청을 보낼 수 있습니다. (관리자 승인 필요)",
+    "parameters": [
+        {
+            "name": "cafe_id",
+            "in": "path",
+            "type": "integer",
+            "required": True,
+            "description": "수정 요청할 카페의 ID"
+        },
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "name": {"type": "string", "example": "새로운 카페 이름"},
+                    "location": {"type": "string", "example": "서울 종로구"},
+                    "coffee_price": {"type": "string", "example": "₩5,000"},
+                    "seats": {"type": "string", "example": "40석"},
+                    "map_url": {"type": "string", "example": "https://maps.example.com/newcafe"},
+                    "img_url": {"type": "string", "example": "https://images.example.com/newcafe.jpg"},
+                    "has_toilet": {"type": "boolean", "example": True},
+                    "has_wifi": {"type": "boolean", "example": True},
+                    "has_sockets": {"type": "boolean", "example": False},
+                    "can_take_calls": {"type": "boolean", "example": True}
+                }
+            }
+        }
+    ],
+    "responses": {
+        201: {
+            "description": "수정 요청 성공",
+            "examples": {
+                "application/json": {"success": "Cafe update request submitted. Awaiting approval."}
+            }
+        },
+        404: {
+            "description": "카페 없음",
+            "examples": {
+                "application/json": {"error": "Cafe not found"}
+            }
+        }
+    }
+})
 def request_cafe_update(cafe_id):
     cafe = Cafe.query.get(cafe_id)
     if not cafe:
@@ -279,8 +589,28 @@ def request_cafe_update(cafe_id):
 # 📌 7. 관리자 API (카페 수정 요청 관리, 승인, 거부, 삭제)
 # ─────────────────────────────────────────────
 
-# [GET] 모든 카페 목록 조회 (관리자 전용)
+# [GET] 모든 카페 목록 조회 API (관리자 전용 / 실제 배포시 공개할 필요가 없음)
 @app.route("/admin/cafes", methods=["GET"])
+@swag_from({
+    "tags": ["Admin"],
+    "summary": "모든 카페 목록 조회 (관리자 전용)",
+    "description": "관리자 권한을 가진 사용자가 모든 카페를 조회할 수 있습니다.",
+    "security": [{"BearerAuth": []}],
+    "responses": {
+        200: {
+            "description": "카페 리스트 반환",
+            "schema": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/definitions/Cafe"
+                }
+            }
+        },
+        403: {
+            "description": "관리자 권한 없음"
+        }
+    }
+})
 def get_cafe_list():
     if not is_admin():
         abort(403, description="관리자 권한이 없습니다.")
@@ -288,8 +618,43 @@ def get_cafe_list():
     cafes = Cafe.query.all()
     return jsonify([cafe_to_dict(cafe) for cafe in cafes]), 200
 
-# [DELETE] 카페 삭제 (관련된 수정 요청도 삭제)
+# [DELETE] 카페 삭제 API (관련된 수정 요청도 삭제 /실제 배포시 공개할 필요가 없음)
 @app.route("/cafes/<int:cafe_id>", methods=["DELETE"])
+@swag_from({
+    "tags": ["Admin"],
+    "summary": "카페 삭제 (관리자 전용)",
+    "description": "관리자가 특정 카페를 삭제할 수 있습니다. 해당 카페와 관련된 수정 요청도 함께 삭제됩니다.",
+    "security": [{"BearerAuth": []}],
+    "parameters": [
+        {
+            "name": "cafe_id",
+            "in": "path",
+            "type": "integer",
+            "required": True,
+            "description": "삭제할 카페의 ID"
+        }
+    ],
+    "responses": {
+        200: {
+            "description": "카페 삭제 성공",
+            "examples": {
+                "application/json": {"success": "Successfully removed cafe and related update requests."}
+            }
+        },
+        403: {
+            "description": "관리자 권한 없음",
+            "examples": {
+                "application/json": {"error": "관리자 권한이 없습니다."}
+            }
+        },
+        404: {
+            "description": "카페를 찾을 수 없음",
+            "examples": {
+                "application/json": {"error": "Cafe not found"}
+            }
+        }
+    }
+})
 def remove_cafe(cafe_id):
     if not is_admin():
         abort(403, description="관리자 권한이 없습니다.")
@@ -306,8 +671,49 @@ def remove_cafe(cafe_id):
 
     return jsonify({"success": "Successfully removed cafe and related update requests."}), 200
 
-# 관리자 승인 / 거부 기능 (승인된 데이터 반환)
+# 관리자 승인 / 거부 기능 API (승인된 데이터 반환: 실제 배포시 공개할 필요가 없음)
 @app.route("/admin/update-requests/<int:request_id>", methods=["PATCH"])
+@swag_from({
+    "tags": ["Admin"],
+    "summary": "카페 수정 요청 승인/거부",
+    "description": "관리자가 카페 수정 요청을 승인하거나 거부할 수 있습니다.",
+    "security": [{"BearerAuth": []}],
+    "parameters": [
+        {
+            "name": "request_id",
+            "in": "path",
+            "type": "integer",
+            "required": True,
+            "description": "승인 또는 거부할 수정 요청 ID"
+        },
+        {
+            "name": "body",
+            "in": "body",
+            "required": True,
+            "schema": {
+                "type": "object",
+                "properties": {
+                    "action": {
+                        "type": "string",
+                        "enum": ["approve", "reject"],
+                        "description": "'approve' 또는 'reject' 값을 전달해야 합니다."
+                    }
+                }
+            }
+        }
+    ],
+    "responses": {
+        200: {
+            "description": "처리 완료"
+        },
+        403: {
+            "description": "관리자 권한 없음"
+        },
+        404: {
+            "description": "수정 요청을 찾을 수 없음"
+        }
+    }
+})
 def process_update_request(request_id):
     if not is_admin():
         abort(403, description="관리자 권한이 없습니다.")
@@ -360,8 +766,36 @@ def process_update_request(request_id):
         return jsonify({"success": "Cafe update request rejected"}), 200
 
 
-# 관리자 수정 요청 목록 조회 (변경된 요청 목록 반환)
+# 관리자 수정 요청 목록 조회 API (변경된 요청 목록 반환)
 @app.route("/admin/update-requests", methods=["GET"])
+@swag_from({
+    "tags": ["Admin"],
+    "summary": "카페 수정 요청 목록 조회",
+    "description": "관리자가 현재 대기 중인 카페 수정 요청을 확인할 수 있습니다.",
+    "security": [{"BearerAuth": []}],
+    "responses": {
+        200: {
+            "description": "수정 요청 목록 반환",
+            "schema": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "request_id": {"type": "integer"},
+                        "cafe_id": {"type": "integer"},
+                        "proposed_name": {"type": "string"},
+                        "proposed_location": {"type": "string"},
+                        "proposed_coffee_price": {"type": "string"},
+                        "status": {"type": "string"}
+                    }
+                }
+            }
+        },
+        403: {
+            "description": "관리자 권한 없음"
+        }
+    }
+})
 def get_update_requests():
     if not is_admin():
         abort(403, description="관리자 권한이 없습니다.")
@@ -406,8 +840,37 @@ def get_update_requests():
 
     return jsonify(results), 200
 
-# 관리자 수정 요청 삭제 기능 추가
+# 관리자 수정 요청 삭제 기능 추가 API
 @app.route("/admin/update-requests/<int:request_id>", methods=["DELETE"])
+@swag_from({
+    "tags": ["Admin"],
+    "summary": "카페 수정 요청 삭제",
+    "description": "관리자가 특정 카페의 수정 요청을 삭제할 수 있습니다.",
+    "security": [{"BearerAuth": []}],
+    "parameters": [
+        {
+            "name": "request_id",
+            "in": "path",
+            "type": "integer",
+            "required": True,
+            "description": "삭제할 수정 요청의 ID"
+        }
+    ],
+    "responses": {
+        200: {
+            "description": "수정 요청 삭제 성공",
+            "examples": {
+                "application/json": {"success": "수정 요청이 삭제되었습니다."}
+            }
+        },
+        403: {
+            "description": "관리자 권한 없음"
+        },
+        404: {
+            "description": "수정 요청을 찾을 수 없음"
+        }
+    }
+})
 def delete_update_request(request_id):
     if not is_admin():
         abort(403, description="❌ 관리자 권한이 없습니다.")

@@ -171,29 +171,6 @@ nav .logo h1 {
     background: #c0392b;
 }
 
-/* ✅ API 정보 */
-#api-info {
-    background: #ecf0f1;
-    padding: 20px;
-    text-align: center;
-    margin-top: 30px;
-}
-
-#api-info h2 {
-    color: #2c3e50;
-}
-
-#api-info ul {
-    list-style: none;
-    padding: 0;
-}
-
-#api-info ul li {
-    margin: 5px 0;
-    font-size: 1rem;
-    color: #34495e;
-}
-
 /* ✅ 카페 추가 페이지 스타일 */
 #add-cafe-section {
     text-align: center;
@@ -471,6 +448,22 @@ nav .logo h1 {
 
 .cafe-detail-info p strong {
     color: #555;
+}
+
+/* ✅ Footer 스타일 */
+footer {
+    background-color: #333;
+    color: #ddd;
+    text-align: center;
+    padding: 10px;
+    font-size: 14px;
+    position: relative;
+    bottom: 0;
+    width: 100%;
+}
+
+footer strong {
+    color: #ffcc00; /* 브랜드 강조 (노란색) */
 }
 
 /* ✅ 반응형 디자인 (모바일 지원) */

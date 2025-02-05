@@ -17,6 +17,7 @@
             <li><a href="/">🏠 홈</a></li>
             <li><a href="/add">➕ 카페 추가</a></li>
             <li><a href="/update">✏️ 정보 수정 요청</a></li>
+            <li><a href="/apidocs">📖 API 문서</a></li>
             <li><a href="/login">🛠️ 관리자 로그인</a></li>
         </ul>
     </nav>
@@ -42,20 +43,10 @@
         <div id="cafe-list" class="cafe-grid"></div>
     </section>
 
-    <!-- ✅ API 설명 -->
-    <section id="api-info">
-        <h2>📌 API 사용법</h2>
-        <p>이 API는 전 세계 카페 목록을 관리합니다.</p>
-        <ul>
-            <li><b>[GET] /cafes</b> - 모든 카페 목록 조회</li>
-            <li><b>[GET] /cafes/random</b> - 랜덤 카페 추천</li>
-            <li><b>[GET] /cafes/location/{location}</b> - 특정 지역 카페 검색</li>
-            <li><b>[POST] /cafes</b> - 새로운 카페 추가</li>
-            <li><b>[POST] /cafes/{cafe_id}/update-request</b> - 카페 정보 수정 요청</li>
-            <li><b>[DELETE] /cafes/{cafe_id}</b> - 카페 삭제 (관리자 전용)</li>
-        </ul>
-        <p>자세한 내용은 <a href="https://documenter.getpostman.com/view/17977980/2sAYQggTZh" target="_blank">API 문서</a>를 확인하세요.</p>
-    </section>
+    <!-- ✅ 푸터 -->
+    <footer>
+        <p>© 2025 Cafe & Wifi API. Developed by <strong>JELKOV</strong>.</p>
+    </footer>
 
     <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 

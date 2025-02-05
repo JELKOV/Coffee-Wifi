@@ -32,15 +32,21 @@ async function searchCafes(event) {
 
     try {
         const response = await fetch(`/cafes/location/${encodeURIComponent(location.toLowerCase())}`);
+
+        if (response.status === 404) {  // 서버에서 404 반환 시 직접 처리
+            document.getElementById("cafe-list").innerHTML = `<p style="color: gray;">검색 결과가 없습니다.</p>`;
+            return;
+        }
+
         if (!response.ok) throw new Error("검색 요청 실패");
 
         const cafes = await response.json();
-        const cafeList = document.getElementById("cafe-list"); // ✅ 기존 전체 리스트 컨테이너 사용
+        const cafeList = document.getElementById("cafe-list");
 
         // ✅ 기존 리스트 초기화 후 검색된 결과만 표시
         cafeList.innerHTML = "";
 
-        if (cafes.error || cafes.length === 0) {
+        if (!cafes || cafes.length === 0) { // 응답 데이터가 빈 배열일 경우
             cafeList.innerHTML = `<p style="color: gray;">검색 결과가 없습니다.</p>`;
             return;
         }
