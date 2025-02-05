@@ -77,7 +77,7 @@ function generateCafeCards(cafes) {
     return cafes.map(cafe => `
         <div class="cafe-card">
             <h3><a href="/cafe/${cafe.id}">${cafe.name}</a></h3>
-            <img src="${cafe.img_url}" alt="${cafe.name}" width="100%">
+            <a href="/cafe/${cafe.id}"><img src="${cafe.img_url}" alt="${cafe.name}" width="100%"></a>
             <p>📍 위치: ${cafe.location}</p>
             <p>💰 커피 가격: ${cafe.coffee_price ? cafe.coffee_price : "정보 없음"}</p>
             <a href="${cafe.map_url}" target="_blank">📍 지도 보기</a>
